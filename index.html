@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOVA — IA Locale</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07080d;
+    --card: #0d0f1a;
+    --border: #1a1d2e;
+    --accent: #00f5a0;
+    --accent2: #00d9f5;
+    --text: #e8eaf0;
+    --muted: #3d4260;
+    --danger: #ff4d6d;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  .cursor {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transition: transform 0.1s;
+    mix-blend-mode: screen;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,245,160,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,160,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0,245,160,0.05) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Header */
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(7,8,13,0.95);
+    backdrop-filter: blur(20px);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo {
+    position: relative;
+    width: 36px;
+    height: 36px;
+  }
+
+  .logo-ring {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: spin 8s linear infinite;
+    position: relative;
+  }
+
+  .logo-ring::before {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: -3px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .logo-inner {
+    width: 16px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 50%;
+    position: absolute;
+    animation: counter-spin 8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes counter-spin { to { transform: rotate(-360deg); } }
+
+  .brand-name {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .brand-sub {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .badge.online {
+    border-color: rgba(0,245,160,0.3);
+    color: var(--accent);
+    background: rgba(0,245,160,0.05);
+  }
+
+  /* Messages */
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  #messages::-webkit-scrollbar { width: 3px; }
+  #messages::-webkit-scrollbar-track { background: transparent; }
+  #messages::-webkit-scrollbar-thumb { background: var(--border); }
+
+  /* Welcome */
+  .welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 16px;
+    text-align: center;
+    padding: 40px;
+    animation: fadeIn 0.8s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+  .welcome-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    position: relative;
+    animation: glow 3s ease-in-out infinite;
+  }
+
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(0,245,160,0.2); }
+    50% { box-shadow: 0 0 40px rgba(0,245,160,0.5), 0 0 80px rgba(0,245,160,0.2); }
+  }
+
+  .welcome h2 {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .welcome p {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.8;
+  }
+
+  .suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 8px;
+  }
+
+  .suggestion {
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--muted);
+    cursor: none;
+    transition: all 0.2s;
+    background: var(--card);
+  }
+
+  .suggestion:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,245,160,0.05);
+  }
+
+  /* Message rows */
+  .msg-row {
+    display: flex;
+    gap: 12px;
+    max-width: 800px;
+    width: 100%;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .msg-row.user {
+    margin-left: auto;
+    flex-direction: row-reverse;
+    animation: slideInRight 0.3s ease;
+  }
+
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: -1px;
+  }
+
+  .avatar.ai {
+    background: rgba(0,245,160,0.1);
+    border: 1px solid rgba(0,245,160,0.3);
+    color: var(--accent);
+  }
+
+  .avatar.user {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .bubble {
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.7;
+    max-width: calc(100% - 46px);
+  }
+
+  .bubble.ai {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-top-left-radius: 3px;
+    color: var(--text);
+  }
+
+  .bubble.user {
+    background: rgba(0,245,160,0.08);
+    border: 1px solid rgba(0,245,160,0.2);
+    border-top-right-radius: 3px;
+    color: var(--text);
+  }
+
+  /* Thinking animation */
+  .thinking {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    padding: 14px 16px;
+  }
+
+  .thinking span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: think 1.4s infinite;
+  }
+
+  .thinking span:nth-child(2) { animation-delay: 0.2s; opacity: 0.7; }
+  .thinking span:nth-child(3) { animation-delay: 0.4s; opacity: 0.4; }
+
+  @keyframes think {
+    0%, 60%, 100% { transform: translateY(0) scale(1); }
+    30% { transform: translateY(-8px) scale(1.2); }
+  }
+
+  /* Input */
+  .input-area {
+    position: relative;
+    z-index: 10;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    background: rgba(7,8,13,0.95);
+    backdrop-filter: blur(20px);
+  }
+
+  .input-wrapper {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    max-width: 800px;
+    margin: 0 auto;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .input-wrapper:focus-within {
+    border-color: rgba(0,245,160,0.4);
+    box-shadow: 0 0 0 3px rgba(0,245,160,0.05), 0 0 20px rgba(0,245,160,0.05);
+  }
+
+  #input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'Outfit', sans-serif;
+    resize: none;
+    max-height: 100px;
+    line-height: 1.5;
+    cursor: none;
+  }
+
+  #input::placeholder { color: var(--muted); }
+
+  #send-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: var(--accent);
+    border: none;
+    cursor: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+  }
+
+  #send-btn:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(0,245,160,0.4); }
+  #send-btn:active { transform: scale(0.95); }
+  #send-btn:disabled { opacity: 0.3; transform: none; box-shadow: none; }
+  #send-btn svg { width: 16px; height: 16px; fill: #07080d; }
+
+  .hint {
+    text-align: center;
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 8px;
+    letter-spacing: 0.5px;
+  }
+
+  #messages > * { align-self: flex-start; }
+  #messages > .msg-row.user { align-self: flex-end; }
+  #messages > .welcome { align-self: center; width: 100%; }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+
+<header>
+  <div class="brand">
+    <div class="logo">
+      <div class="logo-ring">
+        <div class="logo-inner"></div>
+      </div>
+    </div>
+    <div>
+      <div class="brand-name">NOVA</div>
+      <div class="brand-sub">IA LOCALE · OFFLINE</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="badge">v1.0</div>
+    <div class="badge online">● ACTIVE</div>
+  </div>
+</header>
+
+<div id="messages">
+  <div class="welcome" id="welcome">
+    <div class="welcome-circle">🤖</div>
+    <h2>Je suis NOVA</h2>
+    <p>Ton IA locale · 100% hors ligne · Aucune API<br>Je peux répondre à tes questions et discuter avec toi !</p>
+    <div class="suggestions">
+      <div class="suggestion" onclick="suggest(this)">Qui es-tu ?</div>
+      <div class="suggestion" onclick="suggest(this)">Raconte-moi une blague</div>
+      <div class="suggestion" onclick="suggest(this)">C'est quoi l'IA ?</div>
+      <div class="suggestion" onclick="suggest(this)">Aide-moi à coder</div>
+      <div class="suggestion" onclick="suggest(this)">Compte jusqu'à 10</div>
+    </div>
+  </div>
+</div>
+
+<div class="input-area">
+  <div class="input-wrapper">
+    <textarea id="input" rows="1" placeholder="Parle à NOVA..."></textarea>
+    <button id="send-btn" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+  <div class="hint">ENTRÉE pour envoyer · MAJ+ENTRÉE pour nouvelle ligne</div>
+</div>
+
+<script>
+// Custom cursor
+const cursor = document.getElementById('cursor');
+document.addEventListener('mousemove', e => {
+  cursor.style.left = e.clientX - 5 + 'px';
+  cursor.style.top = e.clientY - 5 + 'px';
+});
+
+const messagesEl = document.getElementById('messages');
+const inputEl = document.getElementById('input');
+const sendBtn = document.getElementById('send-btn');
+let isLoading = false;
+let historique = [];
+
+// Auto-resize
+inputEl.addEventListener('input', () => {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 100) + 'px';
+});
+
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+function suggest(el) {
+  inputEl.value = el.textContent;
+  sendMessage();
+}
+
+// ============================================
+// CERVEAU DE NOVA — IA locale sans API
+// ============================================
+
+const connaissance = {
+  identite: {
+    mots: ["qui es-tu", "ton nom", "tu es quoi", "présente-toi", "c'est quoi nova", "tu t'appelles"],
+    reponses: [
+      "Je suis NOVA, une IA locale qui tourne entièrement dans ton navigateur ! 🤖 Pas d'internet requis, pas d'API, tout se passe sur ton PC.",
+      "NOVA ici ! Je suis une intelligence artificielle simple mais fonctionnelle, créée pour tourner sans connexion internet. Je suis 100% locale sur ta machine ! 💻"
+    ]
+  },
+  bonjour: {
+    mots: ["bonjour", "salut", "hello", "hey", "coucou", "bonsoir", "yo"],
+    reponses: [
+      "Salut ! 👋 Je suis NOVA, contente de te parler ! Qu'est-ce que je peux faire pour toi ?",
+      "Hey ! 😊 NOVA est en ligne et prête à t'aider ! Qu'est-ce qu'il y a ?",
+      "Bonjour ! 🌟 Comment je peux t'aider aujourd'hui ?"
+    ]
+  },
+  blague: {
+    mots: ["blague", "rigole", "drôle", "humour", "fais-moi rire", "raconte"],
+    reponses: [
+      "Pourquoi les plongeurs plongent-ils toujours en arrière ? 🤿 Parce que sinon ils tomberaient dans le bateau ! 😂",
+      "Qu'est-ce qu'un canif ? 🔪 Un petit fien ! Hahaha 😄",
+      "Pourquoi les informaticiens confondent-ils Halloween et Noël ? 🎃 Parce que Oct 31 = Dec 25 ! (en octal et décimal) 🤓",
+      "Un homme entre dans une bibliothèque et demande : 'Vous avez des livres sur la paranoïa ?' La bibliothécaire répond : 'Ils sont juste derrière vous !' 😂"
+    ]
+  },
+  ia: {
+    mots: ["c'est quoi l'ia", "intelligence artificielle", "comment tu fonctionnes", "comment marches-tu", "tu es intelligent"],
+    reponses: [
+      "L'IA (Intelligence Artificielle) c'est la capacité d'une machine à simuler l'intelligence humaine 🧠. Moi je suis une IA simple basée sur des règles — je reconnais des mots-clés dans tes messages et je réponds en conséquence. Les vrais LLMs comme ChatGPT ou Claude sont beaucoup plus puissants car ils ont été entraînés sur des milliards de textes !",
+      "Je fonctionne avec un système de reconnaissance de mots-clés 🔍. Quand tu écris quelque chose, j'analyse ton texte et je cherche des patterns que je connais. C'est beaucoup plus simple qu'un vrai LLM, mais ça marche sans internet !"
+    ]
+  },
+  code: {
+    mots: ["aide-moi à coder", "code", "programmer", "python", "javascript", "html", "css", "bug", "erreur"],
+    reponses: [
+      "Je peux t'aider avec le code ! 💻 Dis-moi ce que tu veux faire et dans quel langage. Par exemple : Python, JavaScript, HTML/CSS...",
+      "Pour coder, voici mes conseils de base : 1️⃣ Commence simple, 2️⃣ Teste souvent, 3️⃣ Lis les messages d'erreur, 4️⃣ Google est ton ami ! Dis-moi sur quoi tu bloques ?"
+    ]
+  },
+  compter: {
+    mots: ["compte jusqu", "compte de", "compter", "chiffres", "nombres"],
+    reponses: [
+      "1️⃣ 2️⃣ 3️⃣ 4️⃣ 5️⃣ 6️⃣ 7️⃣ 8️⃣ 9️⃣ 🔟 Voilà ! 😄"
+    ]
+  },
+  merci: {
+    mots: ["merci", "thanks", "thank you", "super", "cool", "génial", "parfait", "nickel"],
+    reponses: [
+      "Avec plaisir ! 😊 N'hésite pas si tu as d'autres questions !",
+      "De rien ! 🙌 Je suis là si tu as besoin !",
+      "Contente d'avoir pu t'aider ! ✨"
+    ]
+  },
+  aurevoir: {
+    mots: ["au revoir", "bye", "ciao", "à bientôt", "bonne nuit", "bonne soirée"],
+    reponses: [
+      "À bientôt ! 👋 N'hésite pas à revenir !",
+      "Bye bye ! 🌟 NOVA sera là quand tu reviendras !",
+      "À plus ! 😊"
+    ]
+  },
+  heure: {
+    mots: ["quelle heure", "il est quelle heure", "l'heure"],
+    reponses: ["dynamic_heure"]
+  },
+  date: {
+    mots: ["quelle date", "quel jour", "on est le", "la date"],
+    reponses: ["dynamic_date"]
+  },
+  meteo: {
+    mots: ["météo", "il fait quel temps", "température", "pluie", "soleil"],
+    reponses: [
+      "Je suis 100% hors ligne donc je ne peux pas accéder à la météo en temps réel ☁️. Pour ça, consulte météo.fr ou Google Météo !"
+    ]
+  },
+  math: {
+    mots: ["calcul", "combien fait", "combien ça fait", "résoudre", "+ ", "- ", "* ", "/ "],
+    reponses: ["dynamic_math"]
+  },
+  triste: {
+    mots: ["je suis triste", "je vais pas bien", "ça va pas", "déprimé", "fatigue"],
+    reponses: [
+      "Oh non 😔 Désolée d'apprendre ça. Je suis juste une IA locale donc mes capacités sont limitées, mais sache que les choses vont s'améliorer ! 💙 N'hésite pas à parler à quelqu'un de confiance.",
+      "Hey 💙 Même si je suis une simple IA, je t'entends. Prends soin de toi, et n'oublie pas que les mauvais moments passent toujours !"
+    ]
+  },
+  defaut: [
+    "Hmm, je ne suis pas sûre de comprendre... 🤔 Peux-tu reformuler ? Je suis une IA locale avec des capacités limitées !",
+    "Je n'ai pas de réponse à ça dans ma base de connaissances 😅 Essaie de me poser une question différente !",
+    "C'est une bonne question, mais ma version locale ne peut pas y répondre ! 🤖 Pour des questions complexes, essaie l'IA avec Groq (bien meilleure) !",
+    "Je suis une petite IA locale, donc je ne connais pas tout 😄 Reformule ou essaie autre chose !"
+  ]
+};
+
+function getHeure() {
+  return `Il est actuellement ${new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})} ⏰`;
+}
+
+function getDate() {
+  return `On est le ${new Date().toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long', year:'numeric'})} 📅`;
+}
+
+function tryMath(text) {
+  const match = text.match(/(\d+[\s]*[\+\-\*\/][\s]*\d+)/);
+  if (match) {
+    try {
+      const result = Function('"use strict"; return (' + match[1] + ')')();
+      return `${match[1].trim()} = **${result}** 🧮`;
+    } catch(e) { return null; }
+  }
+  return null;
+}
+
+function getResponse(text) {
+  const lower = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  
+  for (const [key, data] of Object.entries(connaissance)) {
+    if (key === 'defaut') continue;
+    if (data.mots.some(mot => lower.includes(mot.normalize("NFD").replace(/[\u0300-\u036f]/g, "")))) {
+      const rep = data.reponses[Math.floor(Math.random() * data.reponses.length)];
+      if (rep === 'dynamic_heure') return getHeure();
+      if (rep === 'dynamic_date') return getDate();
+      if (rep === 'dynamic_math') return tryMath(text) || connaissance.defaut[0];
+      return rep;
+    }
+  }
+  
+  // Try math anywhere
+  const math = tryMath(text);
+  if (math) return math;
+  
+  return connaissance.defaut[Math.floor(Math.random() * connaissance.defaut.length)];
+}
+
+// ============================================
+
+function addMessage(role, text) {
+  document.getElementById('welcome')?.remove();
+
+  const row = document.createElement('div');
+  row.className = `msg-row ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = `avatar ${role}`;
+  avatar.textContent = role === 'ai' ? 'NV' : 'Toi';
+
+  const bubble = document.createElement('div');
+  bubble.className = `bubble ${role}`;
+  bubble.textContent = text;
+
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function showThinking() {
+  document.getElementById('welcome')?.remove();
+  const row = document.createElement('div');
+  row.className = 'msg-row';
+  row.id = 'thinking';
+
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar ai';
+  avatar.textContent = 'NV';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble ai thinking';
+  bubble.innerHTML = '<span></span><span></span><span></span>';
+
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function hideThinking() {
+  document.getElementById('thinking')?.remove();
+}
+
+function sendMessage() {
+  const text = inputEl.value.trim();
+  if (!text || isLoading) return;
+
+  isLoading = true;
+  sendBtn.disabled = true;
+  inputEl.value = '';
+  inputEl.style.height = 'auto';
+
+  addMessage('user', text);
+  showThinking();
+
+  // Simulate thinking delay
+  const delay = 400 + Math.random() * 600;
+  setTimeout(() => {
+    hideThinking();
+    const reply = getResponse(text);
+    addMessage('ai', reply);
+    isLoading = false;
+    sendBtn.disabled = false;
+    inputEl.focus();
+  }, delay);
+}
+</script>
+</body>
+</html>
