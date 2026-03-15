@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOVA — IA Auto-Apprenante</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07080d;
+    --card: #0d0f1a;
+    --border: #1a1d2e;
+    --accent: #00f5a0;
+    --accent2: #00d9f5;
+    --text: #e8eaf0;
+    --muted: #3d4260;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(0,245,160,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,245,160,0.03) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 0; }
+  body::after { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0,245,160,0.05) 0%, transparent 60%); pointer-events: none; z-index: 0; }
+  header { position: relative; z-index: 10; padding: 14px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: rgba(7,8,13,0.95); backdrop-filter: blur(20px); }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .logo-ring { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; animation: spin 8s linear infinite; position: relative; }
+  .logo-ring::before { content: ''; position: absolute; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; top: -3px; left: 50%; transform: translateX(-50%); }
+  .logo-inner { width: 16px; height: 16px; background: var(--accent); border-radius: 50%; animation: counter-spin 8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes counter-spin { to { transform: rotate(-360deg); } }
+  .brand-name { font-size: 20px; font-weight: 800; letter-spacing: 3px; color: var(--accent); }
+  .brand-sub { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--muted); letter-spacing: 1px; }
+  .badge { font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border); color: var(--muted); }
+  .badge.online { border-color: rgba(0,245,160,0.3); color: var(--accent); background: rgba(0,245,160,0.05); }
+  #messages { flex: 1; overflow-y: auto; padding: 28px 20px; display: flex; flex-direction: column; gap: 20px; position: relative; z-index: 1; }
+  #messages::-webkit-scrollbar { width: 3px; }
+  #messages::-webkit-scrollbar-thumb { background: var(--border); }
+  .welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 16px; text-align: center; padding: 40px; animation: fadeIn 0.8s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .welcome-circle { width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; font-size: 32px; animation: glow 3s ease-in-out infinite; }
+  @keyframes glow { 0%, 100% { box-shadow: 0 0 20px rgba(0,245,160,0.2); } 50% { box-shadow: 0 0 40px rgba(0,245,160,0.5); } }
+  .welcome h2 { font-size: 28px; font-weight: 800; background: linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .welcome p { font-size: 13px; color: var(--muted); font-family: 'JetBrains Mono', monospace; line-height: 1.8; }
+  .suggestions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
+  .suggestion { padding: 8px 16px; border: 1px solid var(--border); border-radius: 20px; font-size: 12px; color: var(--muted); cursor: pointer; transition: all 0.2s; background: var(--card); }
+  .suggestion:hover { border-color: var(--accent); color: var(--accent); background: rgba(0,245,160,0.05); }
+  .msg-row { display: flex; gap: 12px; max-width: 800px; width: 100%; animation: slideIn 0.3s ease; }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+  .msg-row.user { margin-left: auto; flex-direction: row-reverse; }
+  .avatar { width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  .avatar.ai { background: rgba(0,245,160,0.1); border: 1px solid rgba(0,245,160,0.3); color: var(--accent); }
+  .avatar.user { background: var(--card); border: 1px solid var(--border); color: var(--muted); }
+  .bubble { padding: 12px 16px; border-radius: 12px; font-size: 14px; line-height: 1.7; max-width: calc(100% - 46px); white-space: pre-wrap; }
+  .bubble.ai { background: var(--card); border: 1px solid var(--border); border-top-left-radius: 3px; }
+  .bubble.user { background: rgba(0,245,160,0.08); border: 1px solid rgba(0,245,160,0.2); border-top-right-radius: 3px; }
+  .source-tag { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--muted); margin-top: 6px; }
+  .thinking { display: flex; gap: 6px; align-items: center; padding: 14px 16px; }
+  .thinking span { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: think 1.4s infinite; }
+  .thinking span:nth-child(2) { animation-delay: 0.2s; opacity: 0.7; }
+  .thinking span:nth-child(3) { animation-delay: 0.4s; opacity: 0.4; }
+  @keyframes think { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-8px); } }
+  .input-area { position: relative; z-index: 10; padding: 16px 20px; border-top: 1px solid var(--border); background: rgba(7,8,13,0.95); backdrop-filter: blur(20px); }
+  .input-wrapper { display: flex; gap: 10px; align-items: flex-end; max-width: 800px; margin: 0 auto; background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; transition: all 0.2s; }
+  .input-wrapper:focus-within { border-color: rgba(0,245,160,0.4); box-shadow: 0 0 0 3px rgba(0,245,160,0.05); }
+  #input { flex: 1; background: none; border: none; outline: none; color: var(--text); font-size: 14px; font-family: 'Outfit', sans-serif; resize: none; max-height: 100px; line-height: 1.5; }
+  #input::placeholder { color: var(--muted); }
+  #send-btn { width: 38px; height: 38px; border-radius: 10px; background: var(--accent); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; }
+  #send-btn:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(0,245,160,0.4); }
+  #send-btn:disabled { opacity: 0.3; transform: none; }
+  #send-btn svg { width: 16px; height: 16px; fill: #07080d; }
+  .hint { text-align: center; font-size: 10px; color: var(--muted); font-family: 'JetBrains Mono', monospace; margin-top: 8px; }
+  #messages > * { align-self: flex-start; }
+  #messages > .msg-row.user { align-self: flex-end; }
+  #messages > .welcome { align-self: center; width: 100%; }
+  .gen-img { width: 100%; max-width: 400px; border-radius: 12px; margin-top: 10px; display: block; border: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo-ring"><div class="logo-inner"></div></div>
+    <div>
+      <div class="brand-name">NOVA</div>
+      <div class="brand-sub">IA AUTO-APPRENANTE · MONGODB</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)" id="mem-count">🧠 0 souvenirs</span>
+    <div class="badge">v3.0</div>
+    <div class="badge online">● ACTIVE</div>
+  </div>
+</header>
+
+<div id="messages">
+  <div class="welcome" id="welcome">
+    <div class="welcome-circle">🤖</div>
+    <h2>Je suis NOVA</h2>
+    <p>IA auto-apprenante · Mémoire partagée · Calculs · Images<br>Plus on me parle, plus je deviens intelligente !</p>
+    <div class="suggestions">
+      <div class="suggestion" onclick="suggest(this)">Bonjour !</div>
+      <div class="suggestion" onclick="suggest(this)">Combien fait 42 * 18 ?</div>
+      <div class="suggestion" onclick="suggest(this)">C'est quoi la photosynthèse ?</div>
+      <div class="suggestion" onclick="suggest(this)">Fais moi une image de dragon</div>
+      <div class="suggestion" onclick="suggest(this)">Raconte une histoire courte</div>
+    </div>
+  </div>
+</div>
+
+<div class="input-area">
+  <div class="input-wrapper">
+    <textarea id="input" rows="1" placeholder="Parle à NOVA... Elle apprend toute seule !"></textarea>
+    <button id="send-btn" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+  <div class="hint">ENTRÉE pour envoyer · NOVA apprend automatiquement de chaque conversation</div>
+</div>
+
+<script>
+const messagesEl = document.getElementById('messages');
+const inputEl = document.getElementById('input');
+const sendBtn = document.getElementById('send-btn');
+const SERVER = 'http://localhost:5000';
+let isLoading = false;
+
+inputEl.addEventListener('input', () => {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 100) + 'px';
+});
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+function suggest(el) { inputEl.value = el.textContent; sendMessage(); }
+
+setInterval(() => fetch(SERVER + '/').catch(() => {}), 5 * 60 * 1000);
+
+async function updateMemCount() {
+  try {
+    const res = await fetch(SERVER + '/');
+    const data = await res.json();
+    document.getElementById('mem-count').textContent = '🧠 ' + data.memoire + ' souvenirs';
+  } catch {}
+}
+updateMemCount();
+
+const sourceLabels = {
+  base: '💬 réponse intégrée',
+  calcul: '🧮 calculatrice',
+  memoire: '🧠 depuis ma mémoire',
+  web: '🌐 appris sur internet',
+  generation: '✍️ généré par IA',
+  prediction: '🔮 prédiction de mots',
+  image: '🎨 image générée',
+  inconnu: '🤔 pas trouvé'
+};
+
+// ============================================
+// GÉNÉRATION D'IMAGES CÔTÉ NAVIGATEUR
+// ============================================
+const MOTS_IMAGE = ["génère une image","génère un image","crée une image","créer une image","fais moi une image","fait moi une image","fais une image","fait une image","dessine","illustre","image de","photo de","dessin de","génère une photo","crée une photo"];
+const TRADUCTIONS = {"fleur":"flower","chat":"cat","chien":"dog","maison":"house","forêt":"forest","dragon":"dragon","château":"castle","voiture":"car","arbre":"tree","montagne":"mountain","mer":"sea","ciel":"sky","soleil":"sun","lune":"moon","robot":"robot","ville":"city","espace":"space","licorne":"unicorn","tigre":"tiger","lion":"lion","rouge":"red","bleu":"blue","vert":"green","noir":"black","blanc":"white","une":"a","un":"a","le":"the","la":"the","de":"of"};
+
+function estImage(t) { return MOTS_IMAGE.some(m => t.toLowerCase().includes(m)); }
+
+function preparerPrompt(t) {
+  let s = t.toLowerCase();
+  MOTS_IMAGE.forEach(m => { s = s.replace(m, ''); });
+  s = s.replace(/['"?!]/g, '').trim();
+  Object.entries(TRADUCTIONS).forEach(([fr, en]) => {
+    s = s.replace(new RegExp('\\b' + fr + '\\b', 'gi'), en);
+  });
+  return s.trim() || t;
+}
+
+function afficherImage(texte) {
+  document.getElementById('welcome')?.remove();
+  const prompt = preparerPrompt(texte);
+  const seed = Math.floor(Math.random() * 99999);
+  const url = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt + ' high quality detailed') + '?width=512&height=512&nologo=true&seed=' + seed;
+
+  const row = document.createElement('div');
+  row.className = 'msg-row';
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar ai';
+  avatar.textContent = 'NV';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble ai';
+  bubble.textContent = '⏳ Génération en cours...';
+
+  const img = document.createElement('img');
+  img.className = 'gen-img';
+  img.style.display = 'none';
+  // Essayer plusieurs services
+  const services = [
+    'https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt + ' high quality') + '?width=512&height=512&nologo=true&seed=' + seed,
+    'https://picsum.photos/seed/' + seed + '/512/512',
+  ];
+  
+  let serviceIndex = 0;
+  function tryNextService() {
+    if (serviceIndex >= services.length) {
+      bubble.textContent = '❌ Impossible de générer. Essaie depuis GitHub Pages !';
+      return;
+    }
+    img.src = services[serviceIndex++];
+  }
+
+  img.onload = () => {
+    bubble.textContent = '🎨 ' + prompt;
+    img.style.display = 'block';
+    const tag = document.createElement('div');
+    tag.className = 'source-tag';
+    tag.textContent = '🎨 image générée';
+    bubble.appendChild(img);
+    bubble.appendChild(tag);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  };
+  img.onerror = tryNextService;
+  tryNextService();
+  bubble.appendChild(img);
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+// ============================================
+// MESSAGES
+// ============================================
+function addMessage(role, text, source) {
+  document.getElementById('welcome')?.remove();
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + role;
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar ' + role;
+  avatar.textContent = role === 'ai' ? 'NV' : 'Toi';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble ' + role;
+  bubble.textContent = text;
+  if (source && role === 'ai') {
+    const tag = document.createElement('div');
+    tag.className = 'source-tag';
+    tag.textContent = sourceLabels[source] || source;
+    bubble.appendChild(tag);
+  }
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function showThinking() {
+  document.getElementById('welcome')?.remove();
+  const row = document.createElement('div');
+  row.className = 'msg-row'; row.id = 'thinking';
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar ai'; avatar.textContent = 'NV';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble ai thinking';
+  bubble.innerHTML = '<span></span><span></span><span></span>';
+  row.appendChild(avatar); row.appendChild(bubble);
+  messagesEl.appendChild(row);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+function hideThinking() { document.getElementById('thinking')?.remove(); }
+
+async function sendMessage() {
+  const text = inputEl.value.trim();
+  if (!text || isLoading) return;
+  isLoading = true;
+  sendBtn.disabled = true;
+  inputEl.value = '';
+  inputEl.style.height = 'auto';
+  addMessage('user', text);
+
+  // Image → directement depuis le navigateur
+  if (estImage(text)) {
+    afficherImage(text);
+    isLoading = false;
+    sendBtn.disabled = false;
+    inputEl.focus();
+    return;
+  }
+
+  showThinking();
+  try {
+    const res = await fetch(SERVER + '/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ texte: text })
+    });
+    const data = await res.json();
+    hideThinking();
+    let reponse = data.reponse;
+    if (reponse === 'dynamic_heure') reponse = 'Il est ' + new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}) + ' ⏰';
+    if (reponse === 'dynamic_date') reponse = 'On est le ' + new Date().toLocaleDateString('fr-FR', {weekday:'long',day:'numeric',month:'long',year:'numeric'}) + ' 📅';
+    addMessage('ai', reponse, data.source);
+    updateMemCount();
+  } catch {
+    hideThinking();
+    addMessage('ai', '❌ Serveur non disponible. Lance lancer_nova.bat !');
+  }
+  isLoading = false;
+  sendBtn.disabled = false;
+  inputEl.focus();
+}
+</script>
+</body>
+</html>
